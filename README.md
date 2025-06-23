@@ -23,4 +23,4 @@ Just a simple pattern-scan string scanner for... any program really, but made fo
 - You must check the code and debug it for any bugs, otherwise your pull request will not be accepted.
 
 # Build with mingw64:
-- `g++ main.cpp resources.o -o SinusSMPFinder.exe -lpsapi`
+- `g++ -std=c++20 -static -static-libgcc -static-libstdc++ resources.o -o SinusSMPFinder.exe main.cpp -lpsapi`
