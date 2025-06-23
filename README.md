@@ -21,3 +21,6 @@ Just a simple pattern-scan string scanner for... any program really, but made fo
 # Contributing
 - You must check if the string doesn't exist in the Vanilla game.
 - You must check the code and debug it for any bugs, otherwise your pull request will not be accepted.
+
+# Build with mingw64:
+- `g++ main.cpp resources.o -o SinusSMPFinder.exe -lpsapi`
