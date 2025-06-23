@@ -34,3 +34,7 @@
 
 # Compiler Folder
 mingw64/
+
+# IDE Folders
+.idea/
+.vscode/
