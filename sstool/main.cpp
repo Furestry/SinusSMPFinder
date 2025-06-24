@@ -10,7 +10,6 @@
 #include <cctype>
 #include <chrono>
 #include <iomanip>
-#include <conio.h>
 
 void CheckProcessesByName(const std::string& processName);
 std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_view>& patterns);
@@ -41,9 +40,10 @@ int main() {
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
     std::cout << "\nОбщее Затраченное время: " << duration.count() << " мс\n";
+    std::cout << "\nНажмите Enter для выхода...\n";
 
-    std::cout << "\nНажмите любую клавишу для выхода...\n";
-    _getch();
+    std::cin.ignore();
+    std::cin.get();
 
     return 0;
 }
