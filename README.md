@@ -1,26 +1,20 @@
-# SS-Tool
-Screenshare tool for minecraft
+# SS-Инструмент
+Screenshare инструмент для Minecraft
 
-Just a simple pattern-scan string scanner for... any program really, but made for minecraft.
+Простой сканер строк по шаблону для... любой программы, но сделан для Minecraft.
 
-# How to use?
+# Как использовать?
+- Открыть .exe файл
+- Просто ждать...
 
-- Open the .exe
-- Enter the program ID (you can get this by doing this in the following image)
-![image](https://github.com/user-attachments/assets/f203e8cd-fabd-4134-a81f-f7480066425f)
-- Select the client to scan for
-- Now wait...
+# Как Я могу добавить свои строки?
+- Для начала изучить C++. Добавление строк в данный инструмент очень простое.
+- Использовать C++20 с Мульти-Байт Списком Символов
 
+# Внесение вклада
+- Вы должны проверить, существует ли строка в оригинальной игре.
+- Вы должны проверить код и отладить его на наличие ошибок, в противном случае ваш запрос на включение не будет принят.
 
-# How do I add my own strings?
-
-- Do NOT DM me
-- Actually learn C++. Just for the purpose of adding strings to this tool it's very simple.
-- Use C++20 with Multi-Byte Character Set
-
-# Contributing
-- You must check if the string doesn't exist in the Vanilla game.
-- You must check the code and debug it for any bugs, otherwise your pull request will not be accepted.
-
-# Build with mingw64:
+# Сборка с помощью mingw64:
+- Установить [mingw64](https://www.mingw-w64.org/downloads/)
 - `g++ -std=c++20 -static -static-libgcc -static-libstdc++ resources.o -o SinusSMPFinder.exe main.cpp -lpsapi`
