@@ -46,7 +46,7 @@ int main() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
-    std::cout << " SinusSMPFinder | Создан luvvllx, дополнен Sevler | v1.3" << std::endl;
+    std::cout << "SinusSMPFinder | Создан luvvllx, дополнен Sevler | v1.3" << std::endl;
 
 	// Проверяем все процессы javaw.exe на наличие подозрительных данных
     CheckProcessesByName("javaw.exe");
