@@ -42,7 +42,6 @@ int main() {
     std::cout << "\nОбщее Затраченное время: " << duration.count() << " мс\n";
     std::cout << "\nНажмите Enter для выхода...\n";
 
-    std::cin.ignore();
     std::cin.get();
 
     return 0;
