@@ -40,8 +40,9 @@ int main() {
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
     std::cout << "\nОбщее Затраченное время: " << duration.count() << " мс\n";
-    std::cout << "\nНажмите Enter для выхода...\n";
+    std::cout << "\nНажмите Enter для выхода...";
 
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::cin.get();
 
     return 0;
