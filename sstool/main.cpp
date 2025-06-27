@@ -27,7 +27,7 @@ std::vector<std::string_view> memPatterns = {
     "fastCrystal"
 };
 
-int main() {
+void program(void) {
     SetConsoleOutputCP(CP_UTF8);
 
     std::cout << "SinusSMPFinder | Создан luvvllx, дополнен Sevler | v1.4\n";
@@ -45,7 +45,7 @@ int main() {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::cin.get();
 
-    return 0;
+    return;
 }
 
 void CheckProcessesByName(const std::string& processName) {
