@@ -17,4 +17,4 @@ Screenshare инструмент для Minecraft
 
 # Сборка с помощью mingw64:
 - Установить [mingw64](https://www.mingw-w64.org/downloads/)
-- `g++ -std=c++20 -static -static-libgcc -static-libstdc++ resources.o -o SinusSMPFinder.exe main.cpp -lpsapi`
+- `g++ -std=c++20 -static -static-libgcc -static-libstdc++ resources.o -o SinusSMPFinder.exe main.cpp -lpsapi -s`
