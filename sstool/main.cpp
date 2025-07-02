@@ -16,7 +16,6 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
 
 std::vector<std::string_view> memPatterns = {
     "font.ttf",
-    "Hitboxes.class",
     "canPlaceCrystalServer",
     "Freecam"
     "Retotem",
