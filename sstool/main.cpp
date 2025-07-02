@@ -29,7 +29,7 @@ std::vector<std::string_view> memPatterns = {
 int main() {
     SetConsoleOutputCP(CP_UTF8);
 
-    std::cout << "SinusSMPFinder | Создан luvvllx, дополнен Sevler | v1.4.1\n";
+    std::cout << "SinusSMPFinder | Создан luvvllx, дополнен Sevler | v1.4.2\n";
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
