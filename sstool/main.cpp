@@ -25,7 +25,11 @@ int main() {
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    CheckProcessesByName("javaw.exe");
+    if memPatterns.size() > 0 {
+        CheckProcessesByName("javaw.exe");
+    } else {
+        std::cout << "\nСписок шаблонов строк пустой\n";
+    }
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
@@ -118,8 +122,7 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
                 std::cout << "=";
             } else if (i == pos) {
                 std::cout << ">";
-            }
-            else {
+            } else {
                 std::cout << " ";
             }
         }
