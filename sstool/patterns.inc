@@ -3,7 +3,7 @@
 "Freecam"
 "Retotem",
 "yIQDgFEROJr",
-"AutoTotem"
-"ItemScroller"
-"runecraft"
+"AutoTotem",
+"ItemScroller",
+"runecraft",
 "fastCrystal"
