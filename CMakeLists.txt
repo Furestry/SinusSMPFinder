@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 
-set(CMAKE_CXX_FLAGS_RELEASE "-Os -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-exceptions")
+set(CMAKE_CXX_FLAGS_RELEASE "-Os -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-exceptions -fvisibility=hidden")
 set(CMAKE_EXE_LINKER_FLAGS "-static -s -Wl,--gc-sections")
 
 add_executable(SinusSMPFinder main.cpp resources.o)
