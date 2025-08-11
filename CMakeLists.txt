@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(SinusSMPFinder)
 
+if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+    message(FATAL_ERROR "Требуется MinGW!")
+endif()
+
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/patterns.inc")
     file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/patterns.inc" "// Пусто\n")
 endif()
