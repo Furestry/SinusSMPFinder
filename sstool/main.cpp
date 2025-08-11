@@ -28,7 +28,7 @@ int main() {
     if memPatterns.size() > 0 {
         CheckProcessesByName("javaw.exe");
     } else {
-        std::cout << "\nСписок шаблонов строк пустой\n";
+        std::cout << "Список шаблонов строк пустой\n";
     }
 
     auto end_time = std::chrono::high_resolution_clock::now();
