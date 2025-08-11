@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(SinusSMPFinder)
 
+if(NOT DEFINED ENV{CMAKE_GENERATOR_CODE_PAGE})
+    set(ENV{CMAKE_GENERATOR_CODE_PAGE} "65001")
+endif()
+
 if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
     message(FATAL_ERROR "Требуется MinGW!")
 endif()
