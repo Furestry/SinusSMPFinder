@@ -9,8 +9,8 @@ if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
     message(FATAL_ERROR "Требуется MinGW!")
 endif()
 
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/patterns.inc")
-    file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/patterns.inc" "// Пусто\n")
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sstool/patterns.inc")
+    file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/sstool/patterns.inc" "// Пусто\n")
 endif()
 
 set(CMAKE_CXX_STANDARD 20)
@@ -22,6 +22,9 @@ set(CMAKE_CXX_COMPILER "g++")
 set(CMAKE_CXX_FLAGS_RELEASE "-Os -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-exceptions -fvisibility=hidden")
 set(CMAKE_EXE_LINKER_FLAGS "-static -s -Wl,--gc-sections")
 
-add_executable(SinusSMPFinder main.cpp resources.o)
+add_executable(SinusSMPFinder
+    sstool/main.cpp
+    sstool/resources.o
+)
 
 target_link_libraries(SinusSMPFinder psapi)

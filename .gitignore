@@ -33,6 +33,7 @@
 
 # Compiler Folder
 mingw64/
+build/
 
 # IDE Folders
 .idea/
