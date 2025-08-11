@@ -14,16 +14,8 @@
 void CheckProcessesByName(const std::string& processName);
 std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_view>& patterns);
 
-std::vector<std::string_view> memPatterns = {
-    "font.ttf",
-    "canPlaceCrystalServer",
-    "Freecam"
-    "Retotem",
-    "yIQDgFEROJr",
-    "AutoTotem"
-    "ItemScroller"
-    "runecraft"
-    "fastCrystal"
+const std::vector<std::string_view> memPatterns = {
+    #include "patterns.inc"
 };
 
 int main() {
