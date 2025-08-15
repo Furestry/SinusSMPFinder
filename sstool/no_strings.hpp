@@ -100,6 +100,4 @@ struct EncryptedString {
     }
 };
 
-#define MAKE_ENCRYPTED(str) EncryptedString{str}.decrypt()
-
 #define ENCRYPT_STRING(str) EncryptedString{str}
