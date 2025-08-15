@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.20)
 project(SinusSMPFinder)
 
 if(NOT DEFINED ENV{CMAKE_GENERATOR_CODE_PAGE})
@@ -15,6 +15,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
@@ -28,3 +29,15 @@ add_executable(SinusSMPFinder
 )
 
 target_link_libraries(SinusSMPFinder psapi)
+
+if(WIN32)
+    target_compile_options(SinusSMPFinder PRIVATE "/Zc:preprocessor")
+    target_compile_definitions(SinusSMPFinder PRIVATE 
+        "_WIN32_WINNT=0x0601"
+        "NOMINMAX"
+    )
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(SinusSMPFinder PRIVATE "-ffunction-sections")
+endif()
