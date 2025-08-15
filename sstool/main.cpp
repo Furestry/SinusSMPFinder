@@ -10,13 +10,22 @@
 #include <cctype>
 #include <chrono>
 #include <iomanip>
+#include "no_strings.hpp"
 
 void CheckProcessesByName(const std::string& processName);
 std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_view>& patterns);
 
-const std::vector<std::string_view> memPatterns = {
+constexpr auto encryptedPatterns = std::array{
     #include "patterns.inc"
 };
+
+const std::vector<std::string_view> memPatterns = []() {
+    std::vector<std::string_view> result;
+    for (const auto& es : encryptedPatterns) {
+        result.push_back(es.decrypt());
+    }
+    return result;
+}();
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);
