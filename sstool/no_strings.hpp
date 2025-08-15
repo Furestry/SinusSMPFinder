@@ -23,6 +23,10 @@
 // Prng based off of Parker Miller's
 // "Multiplicative Linear Congruential Generator"
 // https://en.wikipedia.org/wiki/Lehmer_random_number_generator
+
+#include <string_view>
+#include <array>
+
 namespace mlcg {
     constexpr uint32_t modulus() {
         return 0x7fffffff;
@@ -69,3 +73,33 @@ constexpr auto crypt(const char(&input)[N], const uint32_t seed = 0) {
     constexpr auto _{ crypt(STRING, mlcg::seed(__FILE__, __LINE__)) }; \
     return std::string{ crypt(_.data, _.seed).data };                  \
 }())
+
+template<size_t N>
+struct EncryptedString {
+    std::array<char, N> encrypted_data;
+    int seed;
+
+    constexpr EncryptedString(const char(&str)[N], int s = 0) 
+        : seed(s ? s : mlcg::seed(__FILE__, __LINE__)) 
+    {
+        auto stream = seed;
+        for (size_t i = 0; i < N; ++i) {
+            encrypted_data[i] = str[i] ^ stream;
+            stream = mlcg::prng(stream);
+        }
+    }
+
+    constexpr std::string_view decrypt() const {
+        static thread_local std::array<char, N> buffer;
+        auto stream = seed;
+        for (size_t i = 0; i < N; ++i) {
+            buffer[i] = encrypted_data[i] ^ stream;
+            stream = mlcg::prng(stream);
+        }
+        return std::string_view(buffer.data(), N-1);
+    }
+};
+
+#define MAKE_ENCRYPTED(str) EncryptedString{str}.decrypt()
+
+#define ENCRYPT_STRING(str) EncryptedString{str}
