@@ -31,7 +31,6 @@ add_executable(SinusSMPFinder
 target_link_libraries(SinusSMPFinder psapi)
 
 if(WIN32)
-    target_compile_options(SinusSMPFinder PRIVATE "/Zc:preprocessor")
     target_compile_definitions(SinusSMPFinder PRIVATE 
         "_WIN32_WINNT=0x0601"
         "NOMINMAX"

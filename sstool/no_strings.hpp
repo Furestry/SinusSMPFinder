@@ -6,10 +6,10 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,7 +31,7 @@ namespace mlcg {
     constexpr uint32_t modulus() {
         return 0x7fffffff;
     }
-  
+
     // Create entropy using __FILE__ and __LINE__
     template<size_t N>
     constexpr uint32_t seed(const char(&entropy)[N], const uint32_t iv = 0) {
@@ -79,8 +79,8 @@ struct EncryptedString {
     std::array<char, N> encrypted_data;
     int seed;
 
-    constexpr EncryptedString(const char(&str)[N], int s = 0) 
-        : seed(s ? s : mlcg::seed(__FILE__, __LINE__)) 
+    constexpr EncryptedString(const char(&str)[N], int s = 0)
+        : seed(s ? s : mlcg::seed(__FILE__, __LINE__))
     {
         auto stream = seed;
         for (size_t i = 0; i < N; ++i) {
@@ -89,7 +89,8 @@ struct EncryptedString {
         }
     }
 
-    constexpr std::string_view decrypt() const {
+    // Убрали constexpr, оставили thread_local
+    std::string_view decrypt() const {
         static thread_local std::array<char, N> buffer;
         auto stream = seed;
         for (size_t i = 0; i < N; ++i) {

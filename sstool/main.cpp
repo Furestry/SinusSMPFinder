@@ -10,20 +10,21 @@
 #include <cctype>
 #include <chrono>
 #include <iomanip>
+#include <tuple>
 #include "no_strings.hpp"
 
 void CheckProcessesByName(const std::string& processName);
 std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_view>& patterns);
 
-constexpr auto encryptedPatterns = std::array{
+constexpr auto encryptedPatterns = std::tuple{
     #include "patterns.inc"
 };
 
 const std::vector<std::string_view> memPatterns = []() {
     std::vector<std::string_view> result;
-    for (const auto& es : encryptedPatterns) {
-        result.push_back(es.decrypt());
-    }
+    std::apply([&](const auto&... es) {
+        (result.push_back(es.decrypt()), ...);
+    }, encryptedPatterns);
     return result;
 }();
 
