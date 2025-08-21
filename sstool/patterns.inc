@@ -1,9 +1,0 @@
-ENCRYPT_STRING("font.ttf"),
-ENCRYPT_STRING("canPlaceCrystalServer"),
-ENCRYPT_STRING("Freecam"),
-ENCRYPT_STRING("Retotem"),
-ENCRYPT_STRING("yIQDgFEROJr"),
-ENCRYPT_STRING("AutoTotem"),
-ENCRYPT_STRING("ItemScroller"),
-ENCRYPT_STRING("runecraft"),
-ENCRYPT_STRING("fastCrystal")

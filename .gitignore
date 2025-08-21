@@ -38,3 +38,6 @@ build/
 # IDE Folders
 .idea/
 .vscode/
+
+# Pattern String
+sstool/patterns.inc
