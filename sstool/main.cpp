@@ -84,13 +84,11 @@ bool case_insensitive_match(std::string_view haystack, std::string_view needle, 
     if (start_pos + needle.size() > haystack.size()) {
         return false;
     }
-
     for (size_t i = 0; i < needle.size(); ++i) {
         if (std::tolower(static_cast<unsigned char>(haystack[start_pos + i])) != std::tolower(static_cast<unsigned char>(needle[i]))) {
             return false;
         }
     }
-
     return true;
 }
 
@@ -100,15 +98,6 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
     GetSystemInfo(&sys_info);
 
     std::vector<void*> results;
-    std::vector<std::string> lower_patterns;
-    lower_patterns.reserve(patterns.size());
-
-    for (const auto& pattern : patterns) {
-        std::string lower(pattern);
-        std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
-        lower_patterns.emplace_back(std::move(lower));
-    }
-
     size_t total_bytes_scanned = 0;
     size_t total_regions = 0;
     size_t scanned_regions = 0;
@@ -116,11 +105,9 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
 
     while (count_address < sys_info.lpMaximumApplicationAddress) {
         MEMORY_BASIC_INFORMATION memInfo;
-
         if (!VirtualQueryEx(hProcess, count_address, &memInfo, sizeof(memInfo))) {
             break;
         }
-
         total_regions++;
         count_address = static_cast<uint8_t*>(memInfo.BaseAddress) + memInfo.RegionSize;
     }
@@ -128,9 +115,10 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
     uint8_t* address = static_cast<uint8_t*>(sys_info.lpMinimumApplicationAddress);
     const SIZE_T chunk_size = 16 * 1024 * 1024;
     std::vector<uint8_t> buffer(chunk_size);
-    MEMORY_BASIC_INFORMATION memInfo;
 
     while (address < sys_info.lpMaximumApplicationAddress) {
+        MEMORY_BASIC_INFORMATION memInfo;
+
         if (!VirtualQueryEx(hProcess, address, &memInfo, sizeof(memInfo))) {
             break;
         }
@@ -165,29 +153,23 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
                 SIZE_T bytes_to_read = std::min(chunk_size, bytes_remaining);
                 SIZE_T bytesRead;
 
-                if (ReadProcessMemory(hProcess, region_address, buffer.data(), bytes_to_read, bytesRead)) {
+                if (ReadProcessMemory(hProcess, region_address, buffer.data(), bytes_to_read, &bytesRead)) {
                     total_bytes_scanned += bytesRead;
 
                     std::string_view view(reinterpret_cast<char*>(buffer.data()), bytesRead);
-                    std::string lower_view;
-
-                    lower_view.reserve(view.size());
-
-                    for (char c : view) {
-                        lower_view.push_back(std::tolower(static_cast<unsigned char>(c)));
-                    }
 
                     for (size_t i = 0; i < patterns.size(); ++i) {
                         size_t pos = 0;
-
-                        while ((pos = lower_view.find(lower_patterns[i], pos)) != std::string::npos) {
-                            void* found = region_address + pos;
-                            
-                            std::cout << "\n[*] Найдено: " << patterns[i] << " по адресу 0x"
-                                 << std::hex << reinterpret_cast<uintptr_t>(found) << std::dec;
-                            
-                            results.push_back(found);
-                            pos += patterns[i].size();
+                        while (pos + patterns[i].size() <= view.size()) {
+                            if (case_insensitive_match(view, patterns[i], pos)) {
+                                void* found = region_address + pos;
+                                std::cout << "\n[*] Найдено: " << patterns[i] << " по адресу 0x"
+                                          << std::hex << reinterpret_cast<uintptr_t>(found) << std::dec;
+                                results.push_back(found);
+                                pos += patterns[i].size();
+                            } else {
+                                ++pos;
+                            }
                         }
                     }
                 }
@@ -195,6 +177,7 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
                 region_address += bytesRead;
                 bytes_remaining -= bytesRead;
             }
+        }
 
         address = static_cast<uint8_t*>(memInfo.BaseAddress) + memInfo.RegionSize;
     }
