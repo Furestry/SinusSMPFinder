@@ -11,6 +11,8 @@
 #include <chrono>
 #include <iomanip>
 #include <tuple>
+#include <future>
+#include <mutex>
 #include "no_strings.hpp"
 
 void CheckProcessesByName(const std::string& processName);
@@ -66,6 +68,7 @@ void CheckProcessesByName(const std::string& processName) {
 
                 if (hProcess) {
                     auto results = pattern_scan(hProcess, memPatterns);
+
                     std::cout << "Найдено " << results.size() << " читов\n";
 
                     CloseHandle(hProcess);
@@ -84,13 +87,17 @@ bool case_insensitive_match(std::string_view haystack, std::string_view needle, 
     if (start_pos + needle.size() > haystack.size()) {
         return false;
     }
+
     for (size_t i = 0; i < needle.size(); ++i) {
-        if (std::tolower(static_cast<unsigned char>(haystack[start_pos + i])) != std::tolower(static_cast<unsigned char>(needle[i]))) {
+        if (std::tolower(static_cast<unsigned char>(haystack[start_pos + i])) != needle[i]) {
             return false;
         }
     }
+
     return true;
 }
+
+std::mutex console_mutex;
 
 std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_view>& patterns) {
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -98,6 +105,15 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
     GetSystemInfo(&sys_info);
 
     std::vector<void*> results;
+    std::vector<std::string> lower_patterns;
+    lower_patterns.reserve(patterns.size());
+
+    for (const auto& pattern : patterns) {
+        std::string lower(pattern);
+        std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
+        lower_patterns.emplace_back(std::move(lower));
+    }
+
     size_t total_bytes_scanned = 0;
     size_t total_regions = 0;
     size_t scanned_regions = 0;
@@ -105,11 +121,18 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
 
     while (count_address < sys_info.lpMaximumApplicationAddress) {
         MEMORY_BASIC_INFORMATION memInfo;
+
         if (!VirtualQueryEx(hProcess, count_address, &memInfo, sizeof(memInfo))) {
             break;
         }
+
         total_regions++;
         count_address = static_cast<uint8_t*>(memInfo.BaseAddress) + memInfo.RegionSize;
+    }
+
+    SIZE_T max_pattern_length = 0;
+    for (const auto& pattern : patterns) {
+        max_pattern_length = std::max(max_pattern_length, pattern.size());
     }
 
     uint8_t* address = static_cast<uint8_t*>(sys_info.lpMinimumApplicationAddress);
@@ -127,27 +150,31 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
         float progress = static_cast<float>(scanned_regions) / total_regions;
         int barWidth = 50;
 
-        std::cout << "\r[";
-        int pos = static_cast<int>(barWidth * progress);
+        {
+            std::lock_guard<std::mutex> lock(console_mutex);
+            std::cout << "\r[";
 
-        for (int i = 0; i < barWidth; ++i) {
-            if (i < pos) {
-                std::cout << "=";
-            } else if (i == pos) {
-                std::cout << ">";
-            } else {
-                std::cout << " ";
+            int pos = static_cast<int>(barWidth * progress);
+
+            for (int i = 0; i < barWidth; ++i) {
+                if (i < pos) {
+                    std::cout << "=";
+                } else if (i == pos) {
+                    std::cout << ">";
+                } else {
+                    std::cout << " ";
+                }
             }
+
+            std::cout << "] " << std::setw(3) << static_cast<int>(progress * 100.0) << "%";
+            std::cout << " | Регион " << scanned_regions << "/" << total_regions;
+            std::cout.flush();
         }
 
-        std::cout << "] " << std::setw(3) << static_cast<int>(progress * 100.0) << "%";
-        std::cout << " | Регион " << scanned_regions << "/" << total_regions;
-        std::cout.flush();
-
-        if (memInfo.State == MEM_COMMIT &&
-            (memInfo.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE))) {
+        if (memInfo.State == MEM_COMMIT && (memInfo.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE))) {
             SIZE_T bytes_remaining = memInfo.RegionSize;
             uint8_t* region_address = static_cast<uint8_t*>(memInfo.BaseAddress);
+            std::vector<std::future<std::vector<void*>>> futures;
 
             while (bytes_remaining > 0) {
                 SIZE_T bytes_to_read = std::min(chunk_size, bytes_remaining);
@@ -155,27 +182,43 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
 
                 if (ReadProcessMemory(hProcess, region_address, buffer.data(), bytes_to_read, &bytesRead)) {
                     total_bytes_scanned += bytesRead;
-
                     std::string_view view(reinterpret_cast<char*>(buffer.data()), bytesRead);
 
-                    for (size_t i = 0; i < patterns.size(); ++i) {
-                        size_t pos = 0;
-                        while (pos + patterns[i].size() <= view.size()) {
-                            if (case_insensitive_match(view, patterns[i], pos)) {
-                                void* found = region_address + pos;
-                                std::cout << "\n[*] Найдено: " << patterns[i] << " по адресу 0x"
-                                          << std::hex << reinterpret_cast<uintptr_t>(found) << std::dec;
-                                results.push_back(found);
-                                pos += patterns[i].size();
-                            } else {
-                                ++pos;
+                    futures.push_back(std::async(std::launch::async, [view, &lower_patterns, &patterns, region_address]() {
+                        std::vector<void*> local_results;
+
+                        for (size_t i = 0; i < patterns.size(); ++i) {
+                            size_t pos = 0;
+
+                            while (pos + patterns[i].size() <= view.size()) {
+                                if (case_insensitive_match(view, lower_patterns[i], pos)) {
+                                    void* found = region_address + pos;
+                                    {
+                                        std::lock_guard<std::mutex> lock(console_mutex);
+                                        std::cout << "\n[*] Найдено: " << patterns[i] << " по адресу 0x"
+                                                  << std::hex << reinterpret_cast<uintptr_t>(found) << std::dec;
+                                        std::cout.flush();
+                                    }
+
+                                    local_results.push_back(found);
+                                    pos += patterns[i].size();
+                                } else {
+                                    ++pos;
+                                }
                             }
                         }
-                    }
+
+                        return local_results;
+                    }));
                 }
 
-                region_address += bytesRead;
-                bytes_remaining -= bytesRead;
+                region_address += bytesRead - max_pattern_length;
+                bytes_remaining -= (bytesRead > max_pattern_length ? bytesRead - max_pattern_length : bytesRead);
+            }
+
+            for (auto& future : futures) {
+                auto local_results = future.get();
+                results.insert(results.end(), local_results.begin(), local_results.end());
             }
         }
 
@@ -185,16 +228,19 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
-    std::cout << "\n=== Статистика поиска ===";
-    std::cout << "\nПроверено регионов памяти: " << total_regions;
-    std::cout << "\nПросканировано байт: " << total_bytes_scanned / (1024 * 1024) << " MB";
-    std::cout << "\nНайдено совпадений: " << results.size();
-    std::cout << "\nЗатраченное время: " << duration.count() << " мс";
-    std::cout << "\nСкорость сканирования: "
-              << std::fixed << std::setprecision(2)
-              << (total_bytes_scanned / (1024.0 * 1024.0)) / (duration.count() / 1000.0)
-              << " МБ/с";
-    std::cout << "\n========================\n";
+    {
+        std::lock_guard<std::mutex> lock(console_mutex);
+        std::cout << "\n=== Статистика поиска ===";
+        std::cout << "\nПроверено регионов памяти: " << total_regions;
+        std::cout << "\nПросканировано байт: " << total_bytes_scanned / (1024 * 1024) << " MB";
+        std::cout << "\nНайдено совпадений: " << results.size();
+        std::cout << "\nЗатраченное время: " << duration.count() << " мс";
+        std::cout << "\nСкорость сканирования: "
+                  << std::fixed << std::setprecision(2)
+                  << (total_bytes_scanned / (1024.0 * 1024.0)) / (duration.count() / 1000.0)
+                  << " МБ/с";
+        std::cout << "\n========================\n";
+    }
 
     return results;
 }
