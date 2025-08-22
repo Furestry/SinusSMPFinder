@@ -82,7 +82,6 @@ void CheckProcessesByName(const std::string& processName) {
 
 std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_view>& patterns) {
     auto start_time = std::chrono::high_resolution_clock::now();
-
     SYSTEM_INFO sys_info;
     GetSystemInfo(&sys_info);
 
@@ -113,6 +112,8 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
     }
 
     uint8_t* address = static_cast<uint8_t*>(sys_info.lpMinimumApplicationAddress);
+    const SIZE_T chunk_size = 16 * 1024 * 1024;
+    std::vector<uint8_t> buffer(chunk_size);
     MEMORY_BASIC_INFORMATION memInfo;
 
     while (address < sys_info.lpMaximumApplicationAddress) {
@@ -143,32 +144,43 @@ std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_v
 
         if (memInfo.State == MEM_COMMIT &&
             (memInfo.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE))) {
+            SIZE_T bytes_remaining = memInfo.RegionSize;
+            uint8_t* region_address = static_cast<uint8_t*>(memInfo.BaseAddress);
 
-            std::vector<uint8_t> buffer(memInfo.RegionSize);
-            SIZE_T bytesRead;
-            if (ReadProcessMemory(hProcess, memInfo.BaseAddress, buffer.data(), buffer.size(), &bytesRead)) {
-                total_bytes_scanned += bytesRead;
+            while (bytes_remaining > 0) {
+                SIZE_T bytes_to_read = std::min(chunk_size, bytes_remaining);
+                SIZE_T bytesRead;
 
-                std::string_view view(reinterpret_cast<char*>(buffer.data()), bytesRead);
-                std::string lower_view;
-                lower_view.reserve(view.size());
+                if (ReadProcessMemory(hProcess, region_address, buffer.data(), bytes_to_read, bytesRead)) {
+                    total_bytes_scanned += bytesRead;
 
-                for (char c : view) {
-                    lower_view.push_back(std::tolower(static_cast<unsigned char>(c)));
-                }
+                    std::string_view view(reinterpret_cast<char*>(buffer.data()), bytesRead);
+                    std::string lower_view;
 
-                for (size_t i = 0; i < patterns.size(); ++i) {
-                    size_t pos = 0;
-                    while ((pos = lower_view.find(lower_patterns[i], pos)) != std::string::npos) {
-                        void* found = static_cast<uint8_t*>(memInfo.BaseAddress) + pos;
-                        std::cout << "\n[*] Найдено: " << patterns[i] << " по адресу 0x"
+                    lower_view.reserve(view.size());
+
+                    for (char c : view) {
+                        lower_view.push_back(std::tolower(static_cast<unsigned char>(c)));
+                    }
+
+                    for (size_t i = 0; i < patterns.size(); ++i) {
+                        size_t pos = 0;
+
+                        while ((pos = lower_view.find(lower_patterns[i], pos)) != std::string::npos) {
+                            void* found = region_address + pos;
+                            
+                            std::cout << "\n[*] Найдено: " << patterns[i] << " по адресу 0x"
                                  << std::hex << reinterpret_cast<uintptr_t>(found) << std::dec;
-                        results.push_back(found);
-                        pos += patterns[i].size();
+                            
+                            results.push_back(found);
+                            pos += patterns[i].size();
+                        }
                     }
                 }
+
+                region_address += bytesRead;
+                bytes_remaining -= bytesRead;
             }
-        }
 
         address = static_cast<uint8_t*>(memInfo.BaseAddress) + memInfo.RegionSize;
     }
