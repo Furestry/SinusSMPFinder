@@ -80,6 +80,20 @@ void CheckProcessesByName(const std::string& processName) {
     CloseHandle(hSnapshot);
 }
 
+bool case_insensitive_match(std::string_view haystack, std::string_view needle, size_t start_pos) {
+    if (start_pos + needle.size() > haystack.size()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < needle.size(); ++i) {
+        if (std::tolower(static_cast<unsigned char>(haystack[start_pos + i])) != std::tolower(static_cast<unsigned char>(needle[i]))) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 std::vector<void*> pattern_scan(HANDLE hProcess, const std::vector<std::string_view>& patterns) {
     auto start_time = std::chrono::high_resolution_clock::now();
     SYSTEM_INFO sys_info;
